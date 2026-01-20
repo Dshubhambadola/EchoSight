@@ -26,6 +26,7 @@ export const Analytics = () => {
     useEffect(() => {
         const fetchData = async () => {
             if (auth.user) {
+                // Simple mock gating: if data is empty or fetch fails, we treat as locked/no-pro
                 try {
                     const [trendsData, distData] = await Promise.all([
                         AnalyticsService.getTrends(auth.user),
@@ -34,10 +35,12 @@ export const Analytics = () => {
                     setTrends(trendsData);
                     setDistribution(distData);
                 } catch (error) {
-                    console.error(error);
+                    console.error('Error fetching analytics:', error);
                 } finally {
                     setLoading(false);
                 }
+            } else {
+                setLoading(false);
             }
         };
 
@@ -46,6 +49,20 @@ export const Analytics = () => {
 
     if (loading) {
         return <div className="text-white animate-pulse">Loading Analytics...</div>;
+    }
+
+    // Gating Logic: If no data loaded (mocking "Pro" restriction or empty state), show lock
+    // In a real app, we would check a user role or 403 status specifically.
+    if (trends.length === 0 && distribution.length === 0) {
+        return (
+            <div className="text-center py-20">
+                <h2 className="text-2xl text-white font-bold mb-4">Analytics Locked</h2>
+                <p className="text-slate-400 mb-8">Upgrade to Pro to view historical insights.</p>
+                <a href="/upgrade" className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg transition-all">
+                    Verify / Upgrade Plan
+                </a>
+            </div>
+        );
     }
 
     return (
