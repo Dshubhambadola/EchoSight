@@ -9,6 +9,7 @@ import {
 } from 'nest-keycloak-connect';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { AppService } from './app.service';
       clientId: process.env.KEYCLOAK_CLIENT_ID || 'api-gateway',
       secret: process.env.KEYCLOAK_SECRET || 'secret',
     }),
+    EventsModule,
   ],
   controllers: [AppController],
   providers: [

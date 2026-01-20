@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { DashboardLayout } from './layouts/DashboardLayout';
+import { RealTimeFeed } from './components/Feed/RealTimeFeed';
 
 // Placeholder Pages
 const Dashboard = () => (
@@ -16,14 +17,7 @@ const Dashboard = () => (
   </div>
 );
 
-const RealTimeFeed = () => (
-  <div className="space-y-6">
-    <h1 className="text-2xl font-semibold text-white">Live Feed</h1>
-    <div className="bg-slate-900 rounded-lg border border-slate-800 p-8 text-center text-slate-500">
-      Feed Component Coming Soon...
-    </div>
-  </div>
-);
+
 
 function App() {
   return (
