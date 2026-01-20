@@ -12,6 +12,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { EventsModule } from './events/events.module';
 import { AnalyticsModule } from './analytics/analytics.module';
+import { BillingModule } from './billing/billing.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
     }),
     EventsModule,
     AnalyticsModule,
+    BillingModule,
   ],
   controllers: [AppController],
   providers: [

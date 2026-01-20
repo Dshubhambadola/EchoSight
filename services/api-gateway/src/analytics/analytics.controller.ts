@@ -3,7 +3,6 @@ import { AuthGuard } from 'nest-keycloak-connect';
 import { AnalyticsService } from './analytics.service';
 
 @Controller('analytics')
-@UseGuards(AuthGuard)
 export class AnalyticsController {
     constructor(private readonly analyticsService: AnalyticsService) { }
 
