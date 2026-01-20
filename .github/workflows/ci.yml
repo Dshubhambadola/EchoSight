@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: services/api-gateway/package-lock.json
+
+      - name: Install Dependencies (API Gateway)
+        run: npm ci
+        working-directory: services/api-gateway
+
+      - name: Run Unit Tests (API Gateway)
+        run: npm test
+        working-directory: services/api-gateway
+
+      - name: Build Docker Image (API Gateway)
+        run: docker build -t echosight-api-gateway ./services/api-gateway

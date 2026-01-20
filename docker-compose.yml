@@ -117,6 +117,30 @@ services:
     networks:
       - echosight-net
 
+  # API Gateway (NestJS)
+  api-gateway:
+    build: ./services/api-gateway
+    container_name: echosight-api-gateway
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+      POSTGRES_DB: echosight
+      KAFKA_BROKER: kafka:29092
+      KEYCLOAK_AUTH_SERVER_URL: http://keycloak:8080
+      KEYCLOAK_REALM: echosight
+      KEYCLOAK_CLIENT_ID: api-gateway
+      KEYCLOAK_SECRET: secret
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+    depends_on:
+      - postgres
+      - kafka
+      - keycloak
+    ports:
+      - "3000:3000"
+    networks:
+      - echosight-net
+
 volumes:
   postgres_data:
   elastic_data:
