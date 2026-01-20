@@ -2,8 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"encoding/xml"
+	"fmt"
+	"io"
 	"log"
-	"math/rand"
 	"net/http"
 	"os"
 	"time"
@@ -22,27 +24,199 @@ type SocialMention struct {
 	Sentiment string    `json:"sentiment"`
 }
 
-var (
-	platforms  = []string{"Twitter", "Reddit", "TikTok"}
-	sentiments = []string{"Positive", "Negative", "Neutral"}
-	contents   = []string{
-		"Just tried the new EchoSight feature! #awesome",
-		"Why does this always crash? #frustrated",
-		"Interesting analysis on market trends.",
-		"Anyone else seeing this issue?",
-		"Big news coming soon!",
-	}
-	kafkaTopic = "social-mentions"
-)
+// Reddit API Structures
+type RedditResponse struct {
+	Data struct {
+		Children []struct {
+			Data struct {
+				ID         string  `json:"id"`
+				Title      string  `json:"title"`
+				Author     string  `json:"author"`
+				CreatedUTC float64 `json:"created_utc"`
+			} `json:"data"`
+		} `json:"children"`
+	} `json:"data"`
+}
 
-func generateMockMention() SocialMention {
-	return SocialMention{
-		ID:        "evt_" + time.Now().Format("20060102150405"),
-		Platform:  platforms[rand.Intn(len(platforms))],
-		Content:   contents[rand.Intn(len(contents))],
-		Author:    "user_" + time.Now().Format("05"),
-		Timestamp: time.Now(),
-		Sentiment: sentiments[rand.Intn(len(sentiments))],
+// HN API Item
+type HNItem struct {
+	ID    int    `json:"id"`
+	Title string `json:"title"`
+	By    string `json:"by"`
+	Time  int64  `json:"time"`
+	Type  string `json:"type"`
+}
+
+// RSS Structures
+type RSS struct {
+	Channel Channel `xml:"channel"`
+}
+
+type Channel struct {
+	Items []Item `xml:"item"`
+}
+
+type Item struct {
+	Title   string `xml:"title"`
+	Link    string `xml:"link"`
+	Creator string `xml:"dc:creator"` // Often used for author
+	PubDate string `xml:"pubDate"`
+}
+
+var kafkaTopic = "social-mentions"
+
+// --- Fetchers ---
+
+func fetchRedditPosts() ([]SocialMention, error) {
+	client := &http.Client{Timeout: 10 * time.Second}
+	req, err := http.NewRequest("GET", "https://www.reddit.com/r/technology/new.json?limit=5", nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", "EchoSight/1.0")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("reddit api returned status: %d", resp.StatusCode)
+	}
+
+	var rResponse RedditResponse
+	if err := json.NewDecoder(resp.Body).Decode(&rResponse); err != nil {
+		return nil, err
+	}
+
+	var mentions []SocialMention
+	seenIDs := make(map[string]bool)
+
+	for _, child := range rResponse.Data.Children {
+		data := child.Data
+		if seenIDs[data.ID] {
+			continue
+		}
+		seenIDs[data.ID] = true
+
+		mentions = append(mentions, SocialMention{
+			ID:        "reddit_" + data.ID,
+			Platform:  "Reddit",
+			Content:   data.Title,
+			Author:    data.Author,
+			Timestamp: time.Unix(int64(data.CreatedUTC), 0),
+			Sentiment: "Neutral",
+		})
+	}
+	return mentions, nil
+}
+
+func fetchHackerNews() ([]SocialMention, error) {
+	client := &http.Client{Timeout: 10 * time.Second}
+
+	// 1. Get Top Stories IDs
+	resp, err := client.Get("https://hacker-news.firebaseio.com/v0/newstories.json?print=pretty&limitToFirst=5&orderBy=\"$key\"")
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	var ids []int
+	if err := json.NewDecoder(resp.Body).Decode(&ids); err != nil {
+		return nil, err
+	}
+
+	// Limit to 3 to be nice
+	if len(ids) > 3 {
+		ids = ids[:3]
+	}
+
+	var mentions []SocialMention
+
+	// 2. Fetch details for each
+	for _, id := range ids {
+		itemResp, err := client.Get(fmt.Sprintf("https://hacker-news.firebaseio.com/v0/item/%d.json", id))
+		if err != nil {
+			continue
+		}
+		var item HNItem
+		if err := json.NewDecoder(itemResp.Body).Decode(&item); err == nil && item.Title != "" {
+			mentions = append(mentions, SocialMention{
+				ID:        fmt.Sprintf("twitter_%d", item.ID), // Proxy ID
+				Platform:  "Twitter",                          // Simulating Twitter
+				Content:   item.Title,
+				Author:    "@" + item.By,
+				Timestamp: time.Unix(item.Time, 0),
+				Sentiment: "Neutral",
+			})
+		}
+		itemResp.Body.Close()
+	}
+	return mentions, nil
+}
+
+func fetchRSSProxy() ([]SocialMention, error) {
+	// Using The Verge RSS as a proxy for "Tech Video/News" (TikTok/News Source)
+	url := "https://www.theverge.com/rss/index.xml"
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("rss returned status: %d", resp.StatusCode)
+	}
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var rss RSS
+	if err := xml.Unmarshal(data, &rss); err != nil {
+		return nil, err
+	}
+
+	var mentions []SocialMention
+	// Take top 3
+	count := 0
+	for _, item := range rss.Channel.Items {
+		if count >= 3 {
+			break
+		}
+		mentions = append(mentions, SocialMention{
+			ID:        "tiktok_" + fmt.Sprintf("%d", time.Now().UnixNano()), // Generate pseudo ID
+			Platform:  "TikTok",                                             // Simulating TikTok
+			Content:   item.Title + " " + item.Link,
+			Author:    item.Creator,
+			Timestamp: time.Now(), // RSS pubDate parsing is annoying, using Now for simplicity
+			Sentiment: "Neutral",
+		})
+		count++
+	}
+
+	return mentions, nil
+}
+
+// --- Producer ---
+func produceMentions(producer sarama.SyncProducer, mentions []SocialMention) {
+	for _, mention := range mentions {
+		bytes, _ := json.Marshal(mention)
+		msg := &sarama.ProducerMessage{
+			Topic: kafkaTopic,
+			Value: sarama.StringEncoder(string(bytes)),
+		}
+		partition, offset, err := producer.SendMessage(msg)
+		if err != nil {
+			log.Printf("Failed to send [%s]: %v", mention.Platform, err)
+		} else {
+			log.Printf("[%s] Sent to p%d:o%d: %s", mention.Platform, partition, offset, mention.Content)
+		}
+		time.Sleep(100 * time.Millisecond)
 	}
 }
 
@@ -68,47 +242,54 @@ func main() {
 	config.Producer.Retry.Max = 5
 	config.Producer.Return.Successes = true
 
-	// Connect to Kafka & Start Generating Data
+	// Kafka Connection Loop
+	var producer sarama.SyncProducer
+	var err error
+	for i := 0; i < 10; i++ {
+		producer, err = sarama.NewSyncProducer(brokerList, config)
+		if err == nil {
+			break
+		}
+		log.Printf("Kafka connection attempt %d failed: %v", i+1, err)
+		time.Sleep(5 * time.Second)
+	}
+	if err != nil {
+		log.Fatalf("Fatal: Could not connect to Kafka: %v", err)
+	}
+	defer producer.Close()
+	log.Println("Connected to Kafka at", brokerList)
+
+	// Start Polling Routines
 	go func() {
-		// Wait for Kafka to be ready
-		time.Sleep(10 * time.Second)
+		redditTicker := time.NewTicker(30 * time.Second)
+		hnTicker := time.NewTicker(45 * time.Second)
+		rssTicker := time.NewTicker(60 * time.Second)
 
-		var producer sarama.SyncProducer
-		var err error
+		log.Println("Starting Multi-Source Poller (VERSION 2.0 LOADED)...")
 
-		// Simple retry loop for connection
-		for i := 0; i < 5; i++ {
-			producer, err = sarama.NewSyncProducer(brokerList, config)
-			if err == nil {
-				break
-			}
-			log.Printf("Failed to start Kafka producer (attempt %d): %v", i+1, err)
-			time.Sleep(5 * time.Second)
-		}
-
-		if err != nil {
-			log.Fatalf("Could not connect to Kafka after retries: %v", err)
-			return
-		}
-		defer producer.Close()
-		log.Println("Connected to Kafka at", brokerList)
-
-		// Ticker to generate data
-		ticker := time.NewTicker(2 * time.Second)
-		for range ticker.C {
-			mention := generateMockMention()
-			bytes, _ := json.Marshal(mention)
-
-			msg := &sarama.ProducerMessage{
-				Topic: kafkaTopic,
-				Value: sarama.StringEncoder(string(bytes)),
-			}
-
-			partition, offset, err := producer.SendMessage(msg)
-			if err != nil {
-				log.Printf("Failed to send message: %v", err)
-			} else {
-				log.Printf("Message sent to partition %d at offset %d: %s", partition, offset, mention.Content)
+		for {
+			select {
+			case <-redditTicker.C:
+				posts, err := fetchRedditPosts()
+				if err == nil {
+					produceMentions(producer, posts)
+				} else {
+					log.Printf("Reddit Error: %v", err)
+				}
+			case <-hnTicker.C:
+				posts, err := fetchHackerNews()
+				if err == nil {
+					produceMentions(producer, posts)
+				} else {
+					log.Printf("Twitter/HN Error: %v", err)
+				}
+			case <-rssTicker.C:
+				posts, err := fetchRSSProxy()
+				if err == nil {
+					produceMentions(producer, posts)
+				} else {
+					log.Printf("TikTok/RSS Error: %v", err)
+				}
 			}
 		}
 	}()
