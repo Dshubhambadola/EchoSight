@@ -18,6 +18,8 @@ async function bootstrap() {
     },
   });
 
+  app.enableCors(); // Fix for "Failed to fetch" on frontend
+
   await app.startAllMicroservices();
   await app.listen(process.env.PORT ?? 3000);
 }

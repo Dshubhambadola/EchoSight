@@ -16,6 +16,17 @@ services:
     networks:
       - echosight-net
 
+  # Data Collector (Go)
+  collector:
+    build: ./services/collector
+    container_name: echosight-collector
+    environment:
+      KAFKA_BROKER: kafka:29092
+    depends_on:
+      - kafka
+    networks:
+      - echosight-net
+
   # Search Engine (Social Posts)
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.17.10
