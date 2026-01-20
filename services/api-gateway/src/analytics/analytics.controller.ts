@@ -1,8 +1,10 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { AuthGuard } from 'nest-keycloak-connect';
+import { Roles } from 'nest-keycloak-connect';
 import { AnalyticsService } from './analytics.service';
 
 @Controller('analytics')
+@Roles({ roles: ['pro'] })
 export class AnalyticsController {
     constructor(private readonly analyticsService: AnalyticsService) { }
 

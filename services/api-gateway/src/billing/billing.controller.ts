@@ -3,7 +3,6 @@ import { AuthGuard, Unprotected } from 'nest-keycloak-connect';
 import { BillingService } from './billing.service';
 
 @Controller('billing')
-@Unprotected()
 export class BillingController {
     constructor(private readonly billingService: BillingService) { }
 
