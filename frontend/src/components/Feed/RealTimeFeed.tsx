@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { MessageSquare, Twitter, Video, Share2 } from 'lucide-react';
+import { useSearch } from '../../context/SearchContext';
 
 interface SocialMention {
     id: string;
@@ -14,6 +15,7 @@ interface SocialMention {
 const SOCKET_URL = 'http://localhost:3000';
 
 export function RealTimeFeed() {
+    const { query } = useSearch();
     const [mentions, setMentions] = useState<SocialMention[]>([]);
     const [socket, setSocket] = useState<Socket | null>(null);
 
@@ -86,38 +88,48 @@ export function RealTimeFeed() {
                         Waiting for live signals...
                     </div>
                 ) : (
-                    mentions.map((mention) => (
-                        <div
-                            key={mention.id}
-                            className="bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 transition-colors animate-in fade-in slide-in-from-top-4 duration-300"
-                        >
-                            <div className="flex items-start justify-between">
-                                <div className="flex items-center space-x-3">
-                                    <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700">
-                                        {getPlatformIcon(mention.platform)}
+                    mentions
+                        .filter((mention) => {
+                            if (!query) return true;
+                            const q = query.toLowerCase();
+                            return (
+                                mention.content.toLowerCase().includes(q) ||
+                                mention.author.toLowerCase().includes(q) ||
+                                mention.platform.toLowerCase().includes(q)
+                            );
+                        })
+                        .map((mention) => (
+                            <div
+                                key={mention.id}
+                                className="bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 transition-colors animate-in fade-in slide-in-from-top-4 duration-300"
+                            >
+                                <div className="flex items-start justify-between">
+                                    <div className="flex items-center space-x-3">
+                                        <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700">
+                                            {getPlatformIcon(mention.platform)}
+                                        </div>
+                                        <div>
+                                            <h3 className="text-sm font-medium text-white">
+                                                {mention.author}
+                                            </h3>
+                                            <p className="text-xs text-slate-500">
+                                                {new Date(mention.timestamp).toLocaleTimeString()} • via {mention.platform}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h3 className="text-sm font-medium text-white">
-                                            {mention.author}
-                                        </h3>
-                                        <p className="text-xs text-slate-500">
-                                            {new Date(mention.timestamp).toLocaleTimeString()} • via {mention.platform}
-                                        </p>
-                                    </div>
+                                    <span
+                                        className={`px-2 py-0.5 text-xs font-medium rounded-full border ${getSentimentColor(
+                                            mention.sentiment
+                                        )}`}
+                                    >
+                                        {mention.sentiment}
+                                    </span>
                                 </div>
-                                <span
-                                    className={`px-2 py-0.5 text-xs font-medium rounded-full border ${getSentimentColor(
-                                        mention.sentiment
-                                    )}`}
-                                >
-                                    {mention.sentiment}
-                                </span>
+                                <p className="mt-3 text-slate-300 text-sm leading-relaxed">
+                                    {mention.content}
+                                </p>
                             </div>
-                            <p className="mt-3 text-slate-300 text-sm leading-relaxed">
-                                {mention.content}
-                            </p>
-                        </div>
-                    ))
+                        ))
                 )}
             </div>
         </div>
