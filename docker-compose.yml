@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
       POSTGRES_DB: echosight
     ports:
-      - "5432:5432"
+      - "5435:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -78,7 +78,7 @@ services:
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
       KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_URL: jdbc:postgresql://postgres:5432/echosight
       KC_DB_USERNAME: ${POSTGRES_USER:-admin}
       KC_DB_PASSWORD: ${POSTGRES_PASSWORD:-admin}
     depends_on:
@@ -88,10 +88,29 @@ services:
     networks:
       - echosight-net
 
+  # Intelligence Engine (Python)
+  analyzer:
+    build: ./services/analyzer
+    container_name: echosight-analyzer
+    environment:
+      KAFKA_BROKER: kafka:29092
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin}
+      POSTGRES_DB: echosight
+    depends_on:
+      - kafka
+      - postgres
+    ports:
+      - "8002:8002"
+    networks:
+      - echosight-net
+
 volumes:
   postgres_data:
   elastic_data:
   redis_data:
+
 
 networks:
   echosight-net:

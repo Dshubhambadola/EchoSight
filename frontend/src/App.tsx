@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { DashboardLayout } from './layouts/DashboardLayout';
 import { RealTimeFeed } from './components/Feed/RealTimeFeed';
+import { Analytics } from './pages/Analytics';
 
 // Placeholder Pages
 const Dashboard = () => (
@@ -35,6 +36,7 @@ function App() {
         >
           <Route index element={<Dashboard />} />
           <Route path="feed" element={<RealTimeFeed />} />
+          <Route path="analytics" element={<Analytics />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

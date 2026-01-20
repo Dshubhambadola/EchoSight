@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_GUARD } from '@nestjs/core';
 import {
   AuthGuard,
@@ -10,12 +11,23 @@ import {
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { EventsModule } from './events/events.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       envFilePath: '../../.env',
       isGlobal: true,
+    }),
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      host: process.env.POSTGRES_HOST || 'localhost',
+      port: 5435,
+      username: process.env.POSTGRES_USER || 'admin',
+      password: process.env.POSTGRES_PASSWORD || 'admin',
+      database: 'echosight',
+      autoLoadEntities: true,
+      synchronize: true, // Dev only
     }),
     KeycloakConnectModule.register({
       authServerUrl: process.env.KEYCLOAK_AUTH_SERVER_URL || 'http://localhost:8080',
@@ -24,6 +36,7 @@ import { EventsModule } from './events/events.module';
       secret: process.env.KEYCLOAK_SECRET || 'secret',
     }),
     EventsModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [
