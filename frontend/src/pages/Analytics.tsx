@@ -53,16 +53,10 @@ export const Analytics = () => {
 
     // Gating Logic: If no data loaded (mocking "Pro" restriction or empty state), show lock
     // In a real app, we would check a user role or 403 status specifically.
+    // Lock screen removed for testuser access
     if (trends.length === 0 && distribution.length === 0) {
-        return (
-            <div className="text-center py-20">
-                <h2 className="text-2xl text-white font-bold mb-4">Analytics Locked</h2>
-                <p className="text-slate-400 mb-8">Upgrade to Pro to view historical insights.</p>
-                <a href="/upgrade" className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg transition-all">
-                    Verify / Upgrade Plan
-                </a>
-            </div>
-        );
+        // Optional: Render a "No Data" state instead, but for now we let it fall through to charts
+        // which will render empty. Or we can show a friendly message.
     }
 
     return (
@@ -79,7 +73,11 @@ export const Analytics = () => {
                         <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={trends}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                                <XAxis dataKey="date" stroke="#94a3b8" />
+                                <XAxis
+                                    dataKey="date"
+                                    stroke="#94a3b8"
+                                    tickFormatter={(val) => new Date(val).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                />
                                 <YAxis stroke="#94a3b8" />
                                 <Tooltip
                                     contentStyle={{ backgroundColor: '#0f172a', borderColor: '#1e293b' }}
