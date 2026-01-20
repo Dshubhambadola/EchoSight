@@ -1,0 +1,17 @@
+# Basics
+node_modules
+dist
+build
+.DS_Store
+.env
+
+# Go
+/services/collector/bin
+/services/collector/vendor
+
+# Elastic/Docker volumes (if local)
+docker-data
+
+# IDEs
+.vscode
+.idea
