@@ -1,5 +1,6 @@
-import { BarChart2, Home, Settings, FileText, Activity } from 'lucide-react';
+import { BarChart2, Home, Settings, FileText, Activity, LogOut } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from 'react-oidc-context';
 import clsx from 'clsx';
 
 const NAV_ITEMS = [
@@ -12,6 +13,8 @@ const NAV_ITEMS = [
 
 export function Sidebar() {
     const location = useLocation();
+    const auth = useAuth();
+    const user = auth.user?.profile;
 
     return (
         <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col fixed h-full">
@@ -41,14 +44,25 @@ export function Sidebar() {
             </nav>
 
             <div className="p-4 border-t border-slate-800">
-                <div className="flex items-center">
-                    <div className="w-8 h-8 rounded-full bg-sky-500 flex items-center justify-center text-white font-bold text-xs">
-                        JD
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center overflow-hidden">
+                        <div className="w-8 h-8 rounded-full bg-sky-500 flex items-center justify-center text-white font-bold text-xs shrink-0">
+                            {user?.preferred_username?.substring(0, 2).toUpperCase() || 'JD'}
+                        </div>
+                        <div className="ml-3 truncate">
+                            <p className="text-sm font-medium text-white truncate max-w-[90px]">
+                                {user?.preferred_username || 'John Doe'}
+                            </p>
+                            <p className="text-xs text-slate-500">Admin Workspace</p>
+                        </div>
                     </div>
-                    <div className="ml-3">
-                        <p className="text-sm font-medium text-white">John Doe</p>
-                        <p className="text-xs text-slate-500">Admin Workspace</p>
-                    </div>
+                    <button
+                        onClick={() => auth.signoutRedirect()}
+                        className="text-slate-500 hover:text-white transition-colors"
+                        title="Sign Out"
+                    >
+                        <LogOut className="w-4 h-4" />
+                    </button>
                 </div>
             </div>
         </aside>

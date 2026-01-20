@@ -19,11 +19,20 @@ const Dashboard = () => (
 
 
 
+import { ProtectedRoute } from './components/Auth/ProtectedRoute';
+
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<DashboardLayout />}>
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<Dashboard />} />
           <Route path="feed" element={<RealTimeFeed />} />
           <Route path="*" element={<Navigate to="/" replace />} />
