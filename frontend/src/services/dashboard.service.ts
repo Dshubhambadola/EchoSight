@@ -16,8 +16,13 @@ export interface DashboardStats {
     mentionsLast24h: number;
 }
 
-export const fetchDashboardStats = async (token: string): Promise<DashboardStats> => {
-    const response = await axios.get(`${API_URL}/analytics/dashboard`, {
+export const fetchDashboardStats = async (token: string, startDate?: Date | null, endDate?: Date | null): Promise<DashboardStats> => {
+    let query = '';
+    if (startDate && endDate) {
+        query = `?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`;
+    }
+
+    const response = await axios.get(`${API_URL}/analytics/dashboard${query}`, {
         headers: {
             Authorization: `Bearer ${token}`,
         },

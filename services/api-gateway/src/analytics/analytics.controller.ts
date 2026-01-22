@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, UseGuards, Query } from '@nestjs/common';
 import { AuthGuard, Unprotected } from 'nest-keycloak-connect';
 import { Roles } from 'nest-keycloak-connect';
 import { AnalyticsService } from './analytics.service';
@@ -9,25 +9,46 @@ export class AnalyticsController {
 
     @Get('trends')
     @Unprotected()
-    async getTrends() {
-        return this.analyticsService.getDailyTrends();
+    async getTrends(
+        @Query('startDate') startDate?: string,
+        @Query('endDate') endDate?: string
+    ) {
+        return this.analyticsService.getDailyTrends(startDate, endDate);
     }
 
     @Get('dashboard')
     @Unprotected()
-    async getDashboardStats() {
-        return this.analyticsService.getDashboardStats();
+    async getDashboardStats(
+        @Query('startDate') startDate?: string,
+        @Query('endDate') endDate?: string
+    ) {
+        return this.analyticsService.getDashboardStats(startDate, endDate);
     }
 
     @Get('distribution')
     @Unprotected()
-    async getDistribution() {
-        return this.analyticsService.getPlatformDistribution();
+    async getDistribution(
+        @Query('startDate') startDate?: string,
+        @Query('endDate') endDate?: string
+    ) {
+        return this.analyticsService.getPlatformDistribution(startDate, endDate);
     }
 
     @Get('keywords')
     @Unprotected()
-    async getKeywords() {
-        return this.analyticsService.getTopKeywords();
+    async getKeywords(
+        @Query('startDate') startDate?: string,
+        @Query('endDate') endDate?: string
+    ) {
+        return this.analyticsService.getTopKeywords(50, startDate, endDate);
+    }
+
+    @Get('authors')
+    @Unprotected()
+    async getAuthors(
+        @Query('startDate') startDate?: string,
+        @Query('endDate') endDate?: string
+    ) {
+        return this.analyticsService.getTopAuthors(10, startDate, endDate);
     }
 }

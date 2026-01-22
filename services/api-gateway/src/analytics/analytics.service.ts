@@ -10,29 +10,44 @@ export class AnalyticsService {
     private sentimentRepository: Repository<SentimentHistory>,
   ) { }
 
-  async getDailyTrends() {
-    // Simple mock aggregation for now, or real partial query
+  private buildDateWhereClause(startDate?: string, endDate?: string): string {
+    let clause = '1=1';
+    if (startDate) {
+      clause += ` AND timestamp >= '${startDate}'`;
+    }
+    if (endDate) {
+      clause += ` AND timestamp <= '${endDate}'`;
+    }
+    return clause;
+  }
+
+  async getDailyTrends(startDate?: string, endDate?: string) {
+    const where = this.buildDateWhereClause(startDate, endDate);
     const results = await this.sentimentRepository.query(`
       SELECT 
         DATE(timestamp) as date, 
         AVG(sentiment_score) as average_sentiment
       FROM sentiment_history 
+      WHERE ${where}
       GROUP BY DATE(timestamp)
       ORDER BY date DESC
-      LIMIT 7
+      LIMIT 30
     `);
-    return results.map((r: any) => ({
-      date: r.date,
+    // Reverse to show oldest to newest on chart
+    return results.reverse().map((r: any) => ({
+      date: typeof r.date === 'string' ? r.date.split('T')[0] : r.date.toISOString().split('T')[0],
       average_sentiment: parseFloat(r.average_sentiment)
     }));
   }
 
-  async getPlatformDistribution() {
+  async getPlatformDistribution(startDate?: string, endDate?: string) {
+    const where = this.buildDateWhereClause(startDate, endDate);
     const results = await this.sentimentRepository.query(`
       SELECT 
         platform, 
         COUNT(*) as count 
       FROM sentiment_history 
+      WHERE ${where}
       GROUP BY platform
     `);
     return results.map((r: any) => ({
@@ -41,14 +56,30 @@ export class AnalyticsService {
     }));
   }
 
-  async getDashboardStats() {
-    const totalMentions = await this.sentimentRepository.query('SELECT COUNT(*) as count FROM sentiment_history');
-    const activePlatforms = await this.sentimentRepository.query('SELECT COUNT(DISTINCT platform) as count FROM sentiment_history');
-    const avgSentiment = await this.sentimentRepository.query('SELECT AVG(sentiment_score) as avg FROM sentiment_history');
-    const last24h = await this.sentimentRepository.query("SELECT COUNT(*) as count FROM sentiment_history WHERE timestamp > NOW() - INTERVAL '24 hours'");
+  async getDashboardStats(startDate?: string, endDate?: string) {
+    const where = this.buildDateWhereClause(startDate, endDate);
 
-    console.log('Raw Total Mentions:', totalMentions);
-    console.log('Raw Active Platforms:', activePlatforms);
+    // Total Mentions
+    const totalMentions = await this.sentimentRepository.query(
+      `SELECT COUNT(*) as count FROM sentiment_history WHERE ${where}`
+    );
+
+    // Active Platforms
+    const activePlatforms = await this.sentimentRepository.query(
+      `SELECT COUNT(DISTINCT platform) as count FROM sentiment_history WHERE ${where}`
+    );
+
+    // Avg Sentiment
+    const avgSentiment = await this.sentimentRepository.query(
+      `SELECT AVG(sentiment_score) as avg FROM sentiment_history WHERE ${where}`
+    );
+
+    // Mentions last 24h (Fixed metric, usually always 24h regardless of filter, 
+    // but arguably if looking at "All Time", user might still want "Current Velocity". 
+    // Let's keep this as "Current Velocity" i.e. strict last 24h from NOW).
+    const last24h = await this.sentimentRepository.query(
+      "SELECT COUNT(*) as count FROM sentiment_history WHERE timestamp > NOW() - INTERVAL '24 hours'"
+    );
 
     return {
       totalMentions: parseInt(totalMentions[0].count, 10),
@@ -57,10 +88,11 @@ export class AnalyticsService {
       mentionsLast24h: parseInt(last24h[0].count, 10),
     };
   }
-  async getTopKeywords(limit: number = 50) {
-    // Fetch content from the last 7 days
+
+  async getTopKeywords(limit: number = 50, startDate?: string, endDate?: string) {
+    const where = this.buildDateWhereClause(startDate, endDate);
     const result = await this.sentimentRepository.query(
-      "SELECT content FROM sentiment_history WHERE timestamp > NOW() - INTERVAL '7 days'"
+      `SELECT content FROM sentiment_history WHERE ${where}`
     );
 
     const text = result.map((r: any) => r.content).join(' ').toLowerCase();
@@ -83,5 +115,24 @@ export class AnalyticsService {
       .map(([text, value]) => ({ text, value }))
       .sort((a, b) => b.value - a.value)
       .slice(0, limit);
+  }
+
+  async getTopAuthors(limit: number = 10, startDate?: string, endDate?: string) {
+    const where = this.buildDateWhereClause(startDate, endDate);
+    const results = await this.sentimentRepository.query(`
+      SELECT 
+        author, 
+        COUNT(*) as count 
+      FROM sentiment_history 
+      WHERE ${where} AND author IS NOT NULL AND author != ''
+      GROUP BY author
+      ORDER BY count DESC
+      LIMIT ${limit}
+    `);
+
+    return results.map((r: any) => ({
+      name: r.author,
+      count: parseInt(r.count, 10)
+    }));
   }
 }
