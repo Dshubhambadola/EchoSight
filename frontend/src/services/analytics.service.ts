@@ -35,4 +35,21 @@ export const AnalyticsService = {
             return [];
         }
     },
+
+    async getKeywords(user: User | null | undefined) {
+        if (!user) return [];
+
+        try {
+            const response = await axios.get(`${API_URL}/keywords`, {
+                headers: {
+                    Authorization: `Bearer ${user.access_token}`,
+                },
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Failed to fetch keywords', error);
+            return [];
+        }
+    },
 };
+
