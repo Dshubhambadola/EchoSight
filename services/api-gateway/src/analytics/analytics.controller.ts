@@ -24,4 +24,10 @@ export class AnalyticsController {
     async getDistribution() {
         return this.analyticsService.getPlatformDistribution();
     }
+
+    @Get('keywords')
+    @Unprotected()
+    async getKeywords() {
+        return this.analyticsService.getTopKeywords();
+    }
 }

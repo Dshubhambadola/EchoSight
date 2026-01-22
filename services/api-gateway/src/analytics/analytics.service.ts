@@ -57,4 +57,31 @@ export class AnalyticsService {
       mentionsLast24h: parseInt(last24h[0].count, 10),
     };
   }
+  async getTopKeywords(limit: number = 50) {
+    // Fetch content from the last 7 days
+    const result = await this.sentimentRepository.query(
+      "SELECT content FROM sentiment_history WHERE timestamp > NOW() - INTERVAL '7 days'"
+    );
+
+    const text = result.map((r: any) => r.content).join(' ').toLowerCase();
+
+    // Basic stop words list
+    const stopWords = new Set([
+      'the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have', 'i', 'it', 'for', 'not', 'on', 'with', 'he', 'as', 'you', 'do', 'at', 'this', 'but', 'his', 'by', 'from', 'they', 'we', 'say', 'her', 'she', 'or', 'an', 'will', 'my', 'one', 'all', 'would', 'there', 'their', 'what', 'so', 'up', 'out', 'if', 'about', 'who', 'get', 'which', 'go', 'me', 'is', 'are', 'was', 'were', 'has', 'had', 'been', 'can', 'could', 'should', 'would', 'may', 'might', 'must', 'https', 'http', 'com', 'www', 'just', 'like', 'your', 'more', 'when', 'some', 'time', 'only', 'new', 'after', 'also', 'over', 'even', 'most', 'some', 'where', 'these', 'those', 'than', 'into', 'its', 'our', 'very', 'now', 'then', 'them', 'him', 'us', 'did', 'does', 'xyz', 'abc'
+    ]);
+
+    const words = text.match(/\b[a-z]{3,}\b/g) || [];
+    const frequency: Record<string, number> = {};
+
+    words.forEach((word: string) => {
+      if (!stopWords.has(word)) {
+        frequency[word] = (frequency[word] || 0) + 1;
+      }
+    });
+
+    return Object.entries(frequency)
+      .map(([text, value]) => ({ text, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, limit);
+  }
 }
