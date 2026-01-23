@@ -8,6 +8,7 @@ import { TrendingTopicsWidget } from '../components/Analytics/TrendingTopicsWidg
 import { DateRangeSelect, RANGES } from '../components/Analytics/DateRangeSelect';
 import type { DateRange } from '../components/Analytics/DateRangeSelect';
 import { TopAuthorsWidget } from '../components/Analytics/TopAuthorsWidget';
+import { AiSummaryWidget } from '../components/Analytics/AiSummaryWidget';
 
 export const Dashboard: React.FC = () => {
     const auth = useAuth();
@@ -65,6 +66,9 @@ export const Dashboard: React.FC = () => {
                     <p className="mt-2 text-3xl font-bold text-white">{stats?.mentionsLast24h.toLocaleString()}</p>
                 </div>
             </div>
+
+            {/* AI Summary */}
+            <AiSummaryWidget dateRange={dateRange.key} startDate={dateRange.startDate} endDate={dateRange.endDate} />
 
             {/* Widgets Row 1: Word Cloud & Trending */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

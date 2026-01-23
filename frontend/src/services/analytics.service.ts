@@ -77,5 +77,19 @@ export const AnalyticsService = {
             console.error('Failed to fetch authors', error);
             return [];
         }
+    },
+
+    async generateSummary(user: User | null | undefined, startDate?: Date | null, endDate?: Date | null) {
+        if (!user) return "Unauthorized";
+        try {
+            const query = AnalyticsService.getQueryString(startDate, endDate);
+            const response = await axios.post(`${API_URL}/summary${query}`, {}, {
+                headers: { Authorization: `Bearer ${user.access_token}` },
+            });
+            return response.data.summary;
+        } catch (error) {
+            console.error('Failed to generate summary', error);
+            throw error;
+        }
     }
 };
