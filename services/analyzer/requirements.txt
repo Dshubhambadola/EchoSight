@@ -5,3 +5,4 @@ textblob==0.17.1
 sqlalchemy==2.0.25
 psycopg2-binary==2.9.9
 python-dotenv==1.0.0
+spacy==3.7.2
