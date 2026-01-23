@@ -27,9 +27,29 @@ class SentimentHistory(Base):
     content = Column(String)
     author = Column(String)
     sentiment_score = Column(Float)
+    author_followers = Column(Integer, default=0)
+    impact_score = Column(Float, default=0.0)
     timestamp = Column(DateTime, default=datetime.utcnow)
 
 Base.metadata.create_all(bind=engine)
+
+# Auto-migration for existing tables (Hack for MVP)
+# In production, use Alembic. Here we just try to add columns and ignore if they exist.
+def run_migrations():
+    with engine.connect() as conn:
+        try:
+            conn.execute("ALTER TABLE sentiment_history ADD COLUMN author_followers INTEGER DEFAULT 0")
+            print("Added column author_followers")
+        except Exception:
+            pass # Column likely exists
+        
+        try:
+            conn.execute("ALTER TABLE sentiment_history ADD COLUMN impact_score FLOAT DEFAULT 0.0")
+            print("Added column impact_score")
+        except Exception:
+            pass # Column likely exists
+
+run_migrations()
 
 # Kafka Setup
 KAFKA_BROKER = os.getenv("KAFKA_BROKER", "localhost:9092")
@@ -57,6 +77,10 @@ def analyze_sentiment():
             
             logger.info(f"Analyzed: '{text[:20]}...' Score: {polarity}")
 
+            # Extract new fields with defaults
+            followers = data.get("author_followers", 0)
+            impact = data.get("impact_score", 0.0)
+
             # Save to Database
             db = SessionLocal()
             record = SentimentHistory(
@@ -64,6 +88,8 @@ def analyze_sentiment():
                 content=text,
                 author=data.get("author", "Anonymous"),
                 sentiment_score=polarity,
+                author_followers=followers,
+                impact_score=impact,
                 timestamp=datetime.now()
             )
             db.add(record)

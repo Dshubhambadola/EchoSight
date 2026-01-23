@@ -22,6 +22,9 @@ type SocialMention struct {
 	Author    string    `json:"author"`
 	Timestamp time.Time `json:"timestamp"`
 	Sentiment string    `json:"sentiment"`
+	// New Fields for Phase 11
+	AuthorFollowers int     `json:"author_followers"`
+	ImpactScore     float64 `json:"impact_score"`
 }
 
 // Reddit API Structures
@@ -67,6 +70,29 @@ var kafkaTopic = "social-mentions"
 
 // --- Fetchers ---
 
+// Helper to simulate impact
+func calculateImpact(platform string, author string) (int, float64) {
+	// Deterministic random based on author name length to keep it consistent-ish for same author
+	// In reality, we'd query an API.
+	seed := 0
+	for _, c := range author {
+		seed += int(c)
+	}
+	followers := (seed * 123) % 100000 // 0 to 100k
+	if followers < 100 {
+		followers = 100
+	}
+
+	// Simple Impact Logic: log10(followers) * 10 + random noise
+	// Max ~ log10(100k) * 10 = 5 * 10 = 50. Scaled up to 100.
+	importScore := float64(followers)/100000.0*80.0 + 20.0
+	if importScore > 100 {
+		importScore = 100
+	}
+
+	return followers, importScore
+}
+
 func fetchRedditPosts() ([]SocialMention, error) {
 	client := &http.Client{Timeout: 10 * time.Second}
 	req, err := http.NewRequest("GET", "https://www.reddit.com/r/technology/new.json?limit=5", nil)
@@ -100,13 +126,17 @@ func fetchRedditPosts() ([]SocialMention, error) {
 		}
 		seenIDs[data.ID] = true
 
+		f, i := calculateImpact("Reddit", data.Author)
+
 		mentions = append(mentions, SocialMention{
-			ID:        "reddit_" + data.ID,
-			Platform:  "Reddit",
-			Content:   data.Title,
-			Author:    data.Author,
-			Timestamp: time.Unix(int64(data.CreatedUTC), 0),
-			Sentiment: "Neutral",
+			ID:              "reddit_" + data.ID,
+			Platform:        "Reddit",
+			Content:         data.Title,
+			Author:          data.Author,
+			Timestamp:       time.Unix(int64(data.CreatedUTC), 0),
+			Sentiment:       "Neutral",
+			AuthorFollowers: f,
+			ImpactScore:     i,
 		})
 	}
 	return mentions, nil
@@ -142,13 +172,18 @@ func fetchHackerNews() ([]SocialMention, error) {
 		}
 		var item HNItem
 		if err := json.NewDecoder(itemResp.Body).Decode(&item); err == nil && item.Title != "" {
+			authorName := "@" + item.By
+			f, i := calculateImpact("Twitter", authorName)
+
 			mentions = append(mentions, SocialMention{
-				ID:        fmt.Sprintf("twitter_%d", item.ID), // Proxy ID
-				Platform:  "Twitter",                          // Simulating Twitter
-				Content:   item.Title,
-				Author:    "@" + item.By,
-				Timestamp: time.Unix(item.Time, 0),
-				Sentiment: "Neutral",
+				ID:              fmt.Sprintf("twitter_%d", item.ID), // Proxy ID
+				Platform:        "Twitter",                          // Simulating Twitter
+				Content:         item.Title,
+				Author:          authorName,
+				Timestamp:       time.Unix(item.Time, 0),
+				Sentiment:       "Neutral",
+				AuthorFollowers: f,
+				ImpactScore:     i,
 			})
 		}
 		itemResp.Body.Close()
@@ -188,13 +223,17 @@ func fetchRSSProxy() ([]SocialMention, error) {
 		if count >= 3 {
 			break
 		}
+		f, i := calculateImpact("TikTok", item.Creator)
+
 		mentions = append(mentions, SocialMention{
-			ID:        "tiktok_" + fmt.Sprintf("%d", time.Now().UnixNano()), // Generate pseudo ID
-			Platform:  "TikTok",                                             // Simulating TikTok
-			Content:   item.Title + " " + item.Link,
-			Author:    item.Creator,
-			Timestamp: time.Now(), // RSS pubDate parsing is annoying, using Now for simplicity
-			Sentiment: "Neutral",
+			ID:              "tiktok_" + fmt.Sprintf("%d", time.Now().UnixNano()), // Generate pseudo ID
+			Platform:        "TikTok",                                             // Simulating TikTok
+			Content:         item.Title + " " + item.Link,
+			Author:          item.Creator,
+			Timestamp:       time.Now(), // RSS pubDate parsing is annoying, using Now for simplicity
+			Sentiment:       "Neutral",
+			AuthorFollowers: f,
+			ImpactScore:     i,
 		})
 		count++
 	}
