@@ -17,6 +17,12 @@ export class SentimentHistory {
     @Column('float')
     sentiment_score: number;
 
+    @Column('int', { default: 0 })
+    author_followers: number;
+
+    @Column('float', { default: 0 })
+    impact_score: number;
+
     @CreateDateColumn()
     timestamp: Date;
 }

@@ -122,17 +122,21 @@ export class AnalyticsService {
     const results = await this.sentimentRepository.query(`
       SELECT 
         author, 
-        COUNT(*) as count 
+        COUNT(*) as count,
+        MAX(author_followers) as reach,
+        MAX(impact_score) as impact
       FROM sentiment_history 
       WHERE ${where} AND author IS NOT NULL AND author != ''
       GROUP BY author
-      ORDER BY count DESC
+      ORDER BY impact DESC
       LIMIT ${limit}
     `);
 
     return results.map((r: any) => ({
       name: r.author,
-      count: parseInt(r.count, 10)
+      count: parseInt(r.count, 10),
+      reach: parseInt(r.reach || '0', 10),
+      impact: parseFloat(r.impact || '0')
     }));
   }
 }
