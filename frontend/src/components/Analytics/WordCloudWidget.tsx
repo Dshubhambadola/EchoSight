@@ -4,9 +4,17 @@ import cloud from 'd3-cloud';
 
 interface WordCloudWidgetProps {
     words: { text: string; value: number }[];
+    onFilterChange: (type: string) => void;
+    currentFilter: string;
 }
 
-export const WordCloudWidget: React.FC<WordCloudWidgetProps> = ({ words }) => {
+export const WordCloudWidget: React.FC<WordCloudWidgetProps> = ({ words, onFilterChange, currentFilter }) => {
+    const filters = [
+        { label: 'All', value: 'ALL' },
+        { label: 'People', value: 'PERSON' },
+        { label: 'Companies', value: 'ORG' },
+        { label: 'Locations', value: 'GPE' },
+    ];
     const svgRef = useRef<SVGSVGElement>(null);
 
     useEffect(() => {
@@ -66,7 +74,23 @@ export const WordCloudWidget: React.FC<WordCloudWidgetProps> = ({ words }) => {
 
     return (
         <div className="h-96 w-full rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-            <h3 className="mb-4 text-lg font-semibold text-gray-800">Topic Cloud</h3>
+            <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-800">Topic Cloud</h3>
+                <div className="flex space-x-2">
+                    {filters.map((f) => (
+                        <button
+                            key={f.value}
+                            onClick={() => onFilterChange(f.value)}
+                            className={`rounded px-2 py-1 text-xs font-medium transition-colors ${currentFilter === f.value
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                }`}
+                        >
+                            {f.label}
+                        </button>
+                    ))}
+                </div>
+            </div>
             <div className="h-80 w-full">
                 <svg ref={svgRef} className="h-full w-full" />
             </div>

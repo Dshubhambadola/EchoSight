@@ -14,16 +14,17 @@ export const Dashboard: React.FC = () => {
     const auth = useAuth();
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [keywords, setKeywords] = useState<{ text: string; value: number }[]>([]);
-    const [authors, setAuthors] = useState<{ name: string; count: number }[]>([]);
+    const [authors, setAuthors] = useState<{ name: string; count: number; reach: number; impact: number }[]>([]);
     const [loading, setLoading] = useState(true);
     const [dateRange, setDateRange] = useState<DateRange>(RANGES[1]); // Default to 7d
+    const [keywordType, setKeywordType] = useState<string>('ALL');
 
     useEffect(() => {
         if (auth.user?.access_token) {
             setLoading(true);
             Promise.all([
                 fetchDashboardStats(auth.user.access_token, dateRange.startDate, dateRange.endDate),
-                AnalyticsService.getKeywords(auth.user, dateRange.startDate, dateRange.endDate),
+                AnalyticsService.getKeywords(auth.user, dateRange.startDate, dateRange.endDate, keywordType),
                 AnalyticsService.getAuthors(auth.user, dateRange.startDate, dateRange.endDate)
             ])
                 .then(([statsData, keywordsData, authorsData]) => {
@@ -34,7 +35,7 @@ export const Dashboard: React.FC = () => {
                 .catch(console.error)
                 .finally(() => setLoading(false));
         }
-    }, [auth.user?.access_token, dateRange]);
+    }, [auth.user?.access_token, dateRange, keywordType]);
 
     if (loading && !stats) {
         return <div className="flex h-full items-center justify-center p-8">Loading dashboard...</div>;
@@ -73,7 +74,11 @@ export const Dashboard: React.FC = () => {
             {/* Widgets Row 1: Word Cloud & Trending */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2">
-                    <WordCloudWidget words={keywords} />
+                    <WordCloudWidget
+                        words={keywords}
+                        currentFilter={keywordType}
+                        onFilterChange={setKeywordType}
+                    />
                 </div>
                 <div>
                     <TrendingTopicsWidget topics={keywords} />

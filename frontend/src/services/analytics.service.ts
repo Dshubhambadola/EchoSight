@@ -51,10 +51,13 @@ export const AnalyticsService = {
         }
     },
 
-    async getKeywords(user: User | null | undefined, startDate?: Date | null, endDate?: Date | null) {
+    async getKeywords(user: User | null | undefined, startDate?: Date | null, endDate?: Date | null, type?: string) {
         if (!user) return [];
         try {
-            const query = AnalyticsService.getQueryString(startDate, endDate);
+            let query = AnalyticsService.getQueryString(startDate, endDate);
+            if (type) {
+                query += `&type=${type}`;
+            }
             const response = await axios.get(`${API_URL}/keywords${query}`, {
                 headers: { Authorization: `Bearer ${user.access_token}` },
             });
