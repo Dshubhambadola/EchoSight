@@ -21,8 +21,17 @@ export const ProtectedRoute = ({ children }: PropsWithChildren) => {
 
     if (auth.error) {
         return (
-            <div className="min-h-screen bg-slate-950 flex items-center justify-center text-red-500">
-                Auth Error: {auth.error.message}
+            <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center space-y-4">
+                <div className="text-red-500 font-medium">Auth Error: {auth.error.message}</div>
+                <button
+                    onClick={() => {
+                        void auth.removeUser();
+                        void auth.signinRedirect();
+                    }}
+                    className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-md transition-colors"
+                >
+                    Retry Login
+                </button>
             </div>
         );
     }
