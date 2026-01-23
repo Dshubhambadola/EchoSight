@@ -29,8 +29,8 @@ export const Analytics = () => {
                 // Simple mock gating: if data is empty or fetch fails, we treat as locked/no-pro
                 try {
                     const [trendsData, distData] = await Promise.all([
-                        AnalyticsService.getTrends(auth.user),
-                        AnalyticsService.getDistribution(auth.user),
+                        AnalyticsService.getDailyTrends(auth.user),
+                        AnalyticsService.getPlatformDistribution(auth.user),
                     ]);
                     setTrends(trendsData);
                     setDistribution(distData);
@@ -67,7 +67,7 @@ export const Analytics = () => {
                 {/* Sentiment Trend Chart */}
                 <div className="bg-slate-900 p-6 rounded-lg border border-slate-800">
                     <h2 className="text-lg font-medium text-slate-300 mb-4">
-                        Sentiment Trends (Last 7 Days)
+                        Sentiment Trends (Last 30 Days)
                     </h2>
                     <div className="h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
