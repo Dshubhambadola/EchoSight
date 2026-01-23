@@ -23,7 +23,7 @@ import { BillingModule } from './billing/billing.module';
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.POSTGRES_HOST || 'localhost',
-      port: 5435,
+      port: parseInt(process.env.POSTGRES_PORT || '5435', 10),
       username: process.env.POSTGRES_USER || 'admin',
       password: process.env.POSTGRES_PASSWORD || 'admin',
       database: 'echosight',
