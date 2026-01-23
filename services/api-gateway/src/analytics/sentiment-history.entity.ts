@@ -11,6 +11,9 @@ export class SentimentHistory {
     @Column()
     content: string;
 
+    @Column({ nullable: true })
+    author: string;
+
     @Column('float')
     sentiment_score: number;
 

@@ -25,6 +25,7 @@ class SentimentHistory(Base):
     id = Column(Integer, primary_key=True, index=True)
     platform = Column(String, index=True)
     content = Column(String)
+    author = Column(String)
     sentiment_score = Column(Float)
     timestamp = Column(DateTime, default=datetime.utcnow)
 
@@ -61,6 +62,7 @@ def analyze_sentiment():
             record = SentimentHistory(
                 platform=data.get("platform", "Unknown"),
                 content=text,
+                author=data.get("author", "Anonymous"),
                 sentiment_score=polarity,
                 timestamp=datetime.now()
             )
