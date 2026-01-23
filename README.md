@@ -4,6 +4,12 @@
 
 EchoSight is a real-time social sentiment analysis and competitive intelligence platform designed for mid-market to enterprise marketing teams.
 
+## Key Features
+- **Multi-Source Ingestion**: Real-time data from Reddit, Hacker News (Twitter proxy), and RSS (TikTok proxy).
+- **AI Insights**: Automated executive summaries powered by Google Gemini 2.0.
+- **Advanced Analytics**: Sentiment trends, topic modeling (Word Cloud), and influencer identification.
+- **Enterprise Ready**: Role-based access control (Keycloak) and scalable architecture.
+
 ## Tech Stack (Hybrid Microservices)
 
 - **Frontend**: React (Vite) + TypeScript
