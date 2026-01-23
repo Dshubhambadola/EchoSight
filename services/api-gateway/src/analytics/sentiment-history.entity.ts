@@ -23,6 +23,9 @@ export class SentimentHistory {
     @Column('float', { default: 0 })
     impact_score: number;
 
+    @Column('jsonb', { default: [], nullable: true })
+    entities: { text: string; label: string }[];
+
     @CreateDateColumn()
     timestamp: Date;
 }

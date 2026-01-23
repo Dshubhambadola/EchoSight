@@ -65,9 +65,10 @@ export class AnalyticsController {
     @Unprotected()
     async getKeywords(
         @Query('startDate') startDate?: string,
-        @Query('endDate') endDate?: string
+        @Query('endDate') endDate?: string,
+        @Query('type') type?: string
     ) {
-        return this.analyticsService.getTopKeywords(50, startDate, endDate);
+        return this.analyticsService.getTopKeywords(50, startDate, endDate, type);
     }
 
     @Get('authors')

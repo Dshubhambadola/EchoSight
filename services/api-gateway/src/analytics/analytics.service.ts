@@ -89,8 +89,28 @@ export class AnalyticsService {
     };
   }
 
-  async getTopKeywords(limit: number = 50, startDate?: string, endDate?: string) {
+  async getTopKeywords(limit: number = 50, startDate?: string, endDate?: string, type?: string) {
     const where = this.buildDateWhereClause(startDate, endDate);
+
+    // If Entity Type is requested (PERSON, ORG, GPE)
+    if (type && type !== 'ALL') {
+      const results = await this.sentimentRepository.query(`
+        SELECT 
+          elem->>'text' as text, 
+          COUNT(*) as value 
+        FROM sentiment_history,
+             jsonb_array_elements(entities) as elem
+        WHERE ${where} 
+          AND entities IS NOT NULL 
+          AND elem->>'label' = '${type}'
+        GROUP BY text
+        ORDER BY value DESC
+        LIMIT ${limit}
+      `);
+      return results;
+    }
+
+    // Default: Fallback to simple regex on content (Legacy behavior for "All")
     const result = await this.sentimentRepository.query(
       `SELECT content FROM sentiment_history WHERE ${where}`
     );
