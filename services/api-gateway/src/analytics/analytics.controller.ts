@@ -1,11 +1,38 @@
-import { Controller, Get, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, UseGuards, Query } from '@nestjs/common';
 import { AuthGuard, Unprotected } from 'nest-keycloak-connect';
 import { Roles } from 'nest-keycloak-connect';
 import { AnalyticsService } from './analytics.service';
+import { AiService } from './ai.service';
 
 @Controller('analytics')
 export class AnalyticsController {
-    constructor(private readonly analyticsService: AnalyticsService) { }
+    constructor(
+        private readonly analyticsService: AnalyticsService,
+        private readonly aiService: AiService
+    ) { }
+
+    @Post('summary')
+    @Unprotected()
+    async generateSummary(
+        @Query('startDate') startDate?: string,
+        @Query('endDate') endDate?: string
+    ) {
+        const [stats, keywords, authors] = await Promise.all([
+            this.analyticsService.getDashboardStats(startDate, endDate),
+            this.analyticsService.getTopKeywords(20, startDate, endDate),
+            this.analyticsService.getTopAuthors(5, startDate, endDate)
+        ]);
+
+        const context = `
+            Period: ${startDate || 'All Time'} to ${endDate || 'Now'}
+            Total Mentions: ${stats.totalMentions}
+            Average Sentiment Score: ${stats.averageSentiment} (-1.0 to 1.0)
+            Top Keywords: ${keywords.map((k: any) => `${k.text} (${k.value})`).join(', ')}
+            Top Authors: ${authors.map((a: any) => `${a.name} (${a.count})`).join(', ')}
+        `;
+
+        return { summary: await this.aiService.generateSummary(context) };
+    }
 
     @Get('trends')
     @Unprotected()
