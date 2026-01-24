@@ -39,6 +39,7 @@ class SentimentHistory(Base):
     author_followers = Column(Integer, default=0)
     impact_score = Column(Float, default=0.0)
     entities = Column(JSON, default=[])
+    media_meta = Column(JSON, default={})
     timestamp = Column(DateTime, default=datetime.utcnow)
 
 Base.metadata.create_all(bind=engine)
@@ -55,9 +56,13 @@ def run_migrations():
         except Exception: pass
 
         try:
-            # Add entities JSON column
             conn.execute("ALTER TABLE sentiment_history ADD COLUMN entities JSONB DEFAULT '[]'")
-            print("Added column entities")
+        except Exception: pass
+
+        try:
+            # Add media_meta JSON column
+            conn.execute("ALTER TABLE sentiment_history ADD COLUMN media_meta JSONB DEFAULT '{}'")
+            print("Added column media_meta")
         except Exception: pass
 
 run_migrations()
@@ -100,6 +105,7 @@ def analyze_sentiment():
             # Extract new fields with defaults
             followers = data.get("author_followers", 0)
             impact = data.get("impact_score", 0.0)
+            media_meta = data.get("media_meta") or {}
 
             # Save to Database
             db = SessionLocal()
@@ -111,6 +117,7 @@ def analyze_sentiment():
                 author_followers=followers,
                 impact_score=impact,
                 entities=entities,
+                media_meta=media_meta,
                 timestamp=datetime.now()
             )
             db.add(record)
