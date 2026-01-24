@@ -159,4 +159,25 @@ export class AnalyticsService {
       impact: parseFloat(r.impact || '0')
     }));
   }
+
+  async getTopSounds(limit: number = 10, startDate?: string, endDate?: string) {
+    const where = this.buildDateWhereClause(startDate, endDate);
+    const results = await this.sentimentRepository.query(`
+      SELECT 
+        media_meta->>'sound' as sound,
+        COUNT(*) as count
+      FROM sentiment_history
+      WHERE ${where} 
+        AND media_meta IS NOT NULL 
+        AND media_meta->>'sound' IS NOT NULL
+      GROUP BY sound
+      ORDER BY count DESC
+      LIMIT ${limit}
+    `);
+
+    return results.map((r: any) => ({
+      name: r.sound,
+      count: parseInt(r.count, 10)
+    }));
+  }
 }

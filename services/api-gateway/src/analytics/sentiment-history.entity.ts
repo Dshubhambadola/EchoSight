@@ -26,6 +26,9 @@ export class SentimentHistory {
     @Column('jsonb', { default: [], nullable: true })
     entities: { text: string; label: string }[];
 
+    @Column('jsonb', { default: {}, nullable: true })
+    media_meta: Record<string, string>;
+
     @CreateDateColumn()
     timestamp: Date;
 }

@@ -79,4 +79,13 @@ export class AnalyticsController {
     ) {
         return this.analyticsService.getTopAuthors(10, startDate, endDate);
     }
+
+    @Get('sounds')
+    @Unprotected()
+    async getSounds(
+        @Query('startDate') startDate?: string,
+        @Query('endDate') endDate?: string
+    ) {
+        return this.analyticsService.getTopSounds(10, startDate, endDate);
+    }
 }
