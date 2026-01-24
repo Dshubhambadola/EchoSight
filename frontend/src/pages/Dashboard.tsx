@@ -9,12 +9,14 @@ import { DateRangeSelect, RANGES } from '../components/Analytics/DateRangeSelect
 import type { DateRange } from '../components/Analytics/DateRangeSelect';
 import { TopAuthorsWidget } from '../components/Analytics/TopAuthorsWidget';
 import { AiSummaryWidget } from '../components/Analytics/AiSummaryWidget';
+import { TopSoundsWidget } from '../components/Analytics/TopSoundsWidget';
 
 export const Dashboard: React.FC = () => {
     const auth = useAuth();
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [keywords, setKeywords] = useState<{ text: string; value: number }[]>([]);
     const [authors, setAuthors] = useState<{ name: string; count: number; reach: number; impact: number }[]>([]);
+    const [sounds, setSounds] = useState<{ name: string; count: number }[]>([]);
     const [loading, setLoading] = useState(true);
     const [dateRange, setDateRange] = useState<DateRange>(RANGES[1]); // Default to 7d
     const [keywordType, setKeywordType] = useState<string>('ALL');
@@ -25,12 +27,14 @@ export const Dashboard: React.FC = () => {
             Promise.all([
                 fetchDashboardStats(auth.user.access_token, dateRange.startDate, dateRange.endDate),
                 AnalyticsService.getKeywords(auth.user, dateRange.startDate, dateRange.endDate, keywordType),
-                AnalyticsService.getAuthors(auth.user, dateRange.startDate, dateRange.endDate)
+                AnalyticsService.getAuthors(auth.user, dateRange.startDate, dateRange.endDate),
+                AnalyticsService.getSounds(auth.user, dateRange.startDate, dateRange.endDate)
             ])
-                .then(([statsData, keywordsData, authorsData]) => {
+                .then(([statsData, keywordsData, authorsData, soundsData]) => {
                     setStats(statsData);
                     setKeywords(keywordsData);
                     setAuthors(authorsData);
+                    setSounds(soundsData);
                 })
                 .catch(console.error)
                 .finally(() => setLoading(false));
@@ -85,12 +89,14 @@ export const Dashboard: React.FC = () => {
                 </div>
             </div>
 
-            {/* Widgets Row 2: Influencers (New) */}
+            {/* Widgets Row 2: Influencers & Sounds (New) */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div>
+                <div className="lg:col-span-2">
                     <TopAuthorsWidget authors={authors} />
                 </div>
-                {/* Future widgets can go here */}
+                <div>
+                    <TopSoundsWidget sounds={sounds} />
+                </div>
             </div>
         </div>
     );
