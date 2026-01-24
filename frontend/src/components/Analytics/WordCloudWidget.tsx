@@ -64,14 +64,6 @@ export const WordCloudWidget: React.FC<WordCloudWidgetProps> = ({ words, onFilte
 
     }, [words]);
 
-    if (!words || words.length === 0) {
-        return (
-            <div className="flex h-96 items-center justify-center rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-                <p className="text-gray-500">No data available for Word Cloud</p>
-            </div>
-        );
-    }
-
     return (
         <div className="h-96 w-full rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
             <div className="mb-4 flex items-center justify-between">
@@ -82,8 +74,8 @@ export const WordCloudWidget: React.FC<WordCloudWidgetProps> = ({ words, onFilte
                             key={f.value}
                             onClick={() => onFilterChange(f.value)}
                             className={`rounded px-2 py-1 text-xs font-medium transition-colors ${currentFilter === f.value
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                 }`}
                         >
                             {f.label}
@@ -91,9 +83,16 @@ export const WordCloudWidget: React.FC<WordCloudWidgetProps> = ({ words, onFilte
                     ))}
                 </div>
             </div>
-            <div className="h-80 w-full">
-                <svg ref={svgRef} className="h-full w-full" />
-            </div>
+
+            {(!words || words.length === 0) ? (
+                <div className="flex h-80 items-center justify-center">
+                    <p className="text-gray-500">No data available for Word Cloud</p>
+                </div>
+            ) : (
+                <div className="h-80 w-full">
+                    <svg ref={svgRef} className="h-full w-full" />
+                </div>
+            )}
         </div>
     );
 };
