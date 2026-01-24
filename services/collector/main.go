@@ -25,6 +25,8 @@ type SocialMention struct {
 	// New Fields for Phase 11
 	AuthorFollowers int     `json:"author_followers"`
 	ImpactScore     float64 `json:"impact_score"`
+	// New Fields for Phase 13
+	MediaMeta map[string]string `json:"media_meta"`
 }
 
 // Reddit API Structures
@@ -192,48 +194,68 @@ func fetchHackerNews() ([]SocialMention, error) {
 }
 
 func fetchRSSProxy() ([]SocialMention, error) {
+	log.Println("Fetching RSS Proxy...")
 	// Using The Verge RSS as a proxy for "Tech Video/News" (TikTok/News Source)
 	url := "https://www.theverge.com/rss/index.xml"
 
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Get(url)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("rss returned status: %d", resp.StatusCode)
-	}
-
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	var rss RSS
-	if err := xml.Unmarshal(data, &rss); err != nil {
-		return nil, err
-	}
-
 	var mentions []SocialMention
+
+	// Simulation Data
+	sounds := []string{"Oh No - Kreepa", "Spongebob Fail", "Funny Laugh", "Original Sound - User123", "Trending Beat 2024"}
+	effects := []string{"Green Screen", "Time Warp Scan", "Disco Lights", "Beauty Mode", "Zoom In"}
+
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Get(url)
+
+	var items []Item
+	if err == nil && resp.StatusCode == http.StatusOK {
+		data, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		var rss RSS
+		if xml.Unmarshal(data, &rss) == nil {
+			items = rss.Channel.Items
+		}
+	} else {
+		log.Printf("RSS Fetch failed or empty: %v. Using Mock Data.", err)
+	}
+
+	// Fallback to Mock Data if RSS is dry or failed
+	if len(items) == 0 {
+		log.Println("RSS empty, generating mock TikTok data")
+		items = []Item{
+			{Title: "Viral Dance Challenge 2026", Link: "http://tiktok.com/video1", Creator: "@dancer_01", PubDate: time.Now().String()},
+			{Title: "POV: You forgot your homework", Link: "http://tiktok.com/video2", Creator: "@comedy_king", PubDate: time.Now().String()},
+			{Title: "Best Life Hacks for Students", Link: "http://tiktok.com/video3", Creator: "@lifehacks", PubDate: time.Now().String()},
+		}
+	}
+
 	// Take top 3
 	count := 0
-	for _, item := range rss.Channel.Items {
+	for _, item := range items {
 		if count >= 3 {
 			break
 		}
 		f, i := calculateImpact("TikTok", item.Creator)
 
+		// Simulate TikTok Meta
+		sound := sounds[int(time.Now().UnixNano())%len(sounds)]
+		effect := effects[int(time.Now().UnixNano()/2)%len(effects)]
+
+		meta := map[string]string{
+			"sound":  sound,
+			"effect": effect,
+		}
+
 		mentions = append(mentions, SocialMention{
-			ID:              "tiktok_" + fmt.Sprintf("%d", time.Now().UnixNano()), // Generate pseudo ID
-			Platform:        "TikTok",                                             // Simulating TikTok
+			ID:              "tiktok_" + fmt.Sprintf("%d_%d", time.Now().UnixNano(), count), // Generate pseudo ID
+			Platform:        "TikTok",                                                       // Simulating TikTok
 			Content:         item.Title + " " + item.Link,
 			Author:          item.Creator,
-			Timestamp:       time.Now(), // RSS pubDate parsing is annoying, using Now for simplicity
+			Timestamp:       time.Now(),
 			Sentiment:       "Neutral",
 			AuthorFollowers: f,
 			ImpactScore:     i,
+			MediaMeta:       meta,
 		})
 		count++
 	}
