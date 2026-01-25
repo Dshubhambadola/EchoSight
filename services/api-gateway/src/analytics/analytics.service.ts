@@ -180,4 +180,25 @@ export class AnalyticsService {
       count: parseInt(r.count, 10)
     }));
   }
+
+  async getShareOfVoice(queries: string[], startDate?: string, endDate?: string) {
+    const where = this.buildDateWhereClause(startDate, endDate);
+
+    const results = await Promise.all(queries.map(async (q) => {
+      // Sanitize simple query to prevent injection in LIKE (basic)
+      // ideally use parameters, but query() with parameters array is safer.
+      // TypeORM query: .query(sql, [params])
+      const sanitized = `%${q}%`;
+      const res = await this.sentimentRepository.query(
+        `SELECT COUNT(*) as count FROM sentiment_history WHERE ${where} AND content ILIKE $1`,
+        [sanitized]
+      );
+      return {
+        name: q,
+        value: parseInt(res[0].count, 10)
+      };
+    }));
+
+    return results;
+  }
 }

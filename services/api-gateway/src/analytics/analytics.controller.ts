@@ -88,4 +88,15 @@ export class AnalyticsController {
     ) {
         return this.analyticsService.getTopSounds(10, startDate, endDate);
     }
+
+    @Get('share-of-voice')
+    @Unprotected()
+    async getShareOfVoice(
+        @Query('queries') queries: string | string[],
+        @Query('startDate') startDate?: string,
+        @Query('endDate') endDate?: string
+    ) {
+        const queryList = Array.isArray(queries) ? queries : [queries];
+        return this.analyticsService.getShareOfVoice(queryList, startDate, endDate);
+    }
 }
