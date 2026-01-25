@@ -201,4 +201,16 @@ export class AnalyticsService {
 
     return results;
   }
+
+  async getRawData(startDate?: string, endDate?: string) {
+    const where = this.buildDateWhereClause(startDate, endDate);
+    // Limit to 5000 to prevent performance issues during export
+    return this.sentimentRepository.query(`
+      SELECT * 
+      FROM sentiment_history 
+      WHERE ${where}
+      ORDER BY timestamp DESC
+      LIMIT 5000
+    `);
+  }
 }

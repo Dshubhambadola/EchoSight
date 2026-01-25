@@ -99,4 +99,13 @@ export class AnalyticsController {
         const queryList = Array.isArray(queries) ? queries : [queries];
         return this.analyticsService.getShareOfVoice(queryList, startDate, endDate);
     }
+
+    @Get('export')
+    @Unprotected()
+    async getRawData(
+        @Query('startDate') startDate?: string,
+        @Query('endDate') endDate?: string
+    ) {
+        return this.analyticsService.getRawData(startDate, endDate);
+    }
 }
