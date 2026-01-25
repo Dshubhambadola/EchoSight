@@ -18,7 +18,7 @@ export class AnalyticsController {
         @Query('endDate') endDate?: string
     ) {
         const [stats, keywords, authors] = await Promise.all([
-            this.analyticsService.getDashboardStats(startDate, endDate),
+            this.analyticsService.getDashboardStats(startDate, endDate) as Promise<any>,
             this.analyticsService.getTopKeywords(20, startDate, endDate),
             this.analyticsService.getTopAuthors(5, startDate, endDate)
         ]);

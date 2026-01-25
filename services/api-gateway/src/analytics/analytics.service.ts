@@ -1,6 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { SentimentHistory } from './sentiment-history.entity';
 
 @Injectable()
@@ -8,6 +10,7 @@ export class AnalyticsService {
   constructor(
     @InjectRepository(SentimentHistory)
     private sentimentRepository: Repository<SentimentHistory>,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) { }
 
   private buildDateWhereClause(startDate?: string, endDate?: string): string {
@@ -22,6 +25,10 @@ export class AnalyticsService {
   }
 
   async getDailyTrends(startDate?: string, endDate?: string) {
+    const cacheKey = `analytics:trends:${startDate || 'all'}:${endDate || 'all'}`;
+    const cached = await this.cacheManager.get(cacheKey);
+    if (cached) return cached;
+
     const where = this.buildDateWhereClause(startDate, endDate);
     const results = await this.sentimentRepository.query(`
       SELECT 
@@ -34,13 +41,20 @@ export class AnalyticsService {
       LIMIT 30
     `);
     // Reverse to show oldest to newest on chart
-    return results.reverse().map((r: any) => ({
+    const data = results.reverse().map((r: any) => ({
       date: typeof r.date === 'string' ? r.date.split('T')[0] : r.date.toISOString().split('T')[0],
       average_sentiment: parseFloat(r.average_sentiment)
     }));
+
+    await this.cacheManager.set(cacheKey, data);
+    return data;
   }
 
   async getPlatformDistribution(startDate?: string, endDate?: string) {
+    const cacheKey = `analytics:dist:${startDate || 'all'}:${endDate || 'all'}`;
+    const cached = await this.cacheManager.get(cacheKey);
+    if (cached) return cached;
+
     const where = this.buildDateWhereClause(startDate, endDate);
     const results = await this.sentimentRepository.query(`
       SELECT 
@@ -50,13 +64,20 @@ export class AnalyticsService {
       WHERE ${where}
       GROUP BY platform
     `);
-    return results.map((r: any) => ({
+    const data = results.map((r: any) => ({
       platform: r.platform,
       count: parseInt(r.count, 10)
     }));
+
+    await this.cacheManager.set(cacheKey, data);
+    return data;
   }
 
   async getDashboardStats(startDate?: string, endDate?: string) {
+    const cacheKey = `analytics:stats:${startDate || 'all'}:${endDate || 'all'}`;
+    const cached = await this.cacheManager.get(cacheKey);
+    if (cached) return cached;
+
     const where = this.buildDateWhereClause(startDate, endDate);
 
     // Total Mentions
@@ -81,15 +102,22 @@ export class AnalyticsService {
       "SELECT COUNT(*) as count FROM sentiment_history WHERE timestamp > NOW() - INTERVAL '24 hours'"
     );
 
-    return {
+    const data = {
       totalMentions: parseInt(totalMentions[0].count, 10),
       activePlatforms: parseInt(activePlatforms[0].count, 10),
       averageSentiment: parseFloat(avgSentiment[0].avg || 0).toFixed(2),
       mentionsLast24h: parseInt(last24h[0].count, 10),
     };
+
+    await this.cacheManager.set(cacheKey, data);
+    return data;
   }
 
   async getTopKeywords(limit: number = 50, startDate?: string, endDate?: string, type?: string) {
+    const cacheKey = `analytics:keywords:${limit}:${startDate || 'all'}:${endDate || 'all'}:${type || 'default'}`;
+    const cached = await this.cacheManager.get(cacheKey);
+    if (cached) return cached;
+
     const where = this.buildDateWhereClause(startDate, endDate);
 
     // If Entity Type is requested (PERSON, ORG, GPE)
@@ -107,6 +135,7 @@ export class AnalyticsService {
         ORDER BY value DESC
         LIMIT ${limit}
       `);
+      await this.cacheManager.set(cacheKey, results);
       return results;
     }
 
@@ -131,10 +160,13 @@ export class AnalyticsService {
       }
     });
 
-    return Object.entries(frequency)
+    const data = Object.entries(frequency)
       .map(([text, value]) => ({ text, value }))
       .sort((a, b) => b.value - a.value)
       .slice(0, limit);
+
+    await this.cacheManager.set(cacheKey, data);
+    return data;
   }
 
   async getTopAuthors(limit: number = 10, startDate?: string, endDate?: string) {

@@ -1,16 +1,18 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, Index } from 'typeorm';
 
 @Entity('sentiment_history')
 export class SentimentHistory {
     @PrimaryGeneratedColumn()
     id: number;
 
+    @Index()
     @Column()
     platform: string;
 
     @Column()
     content: string;
 
+    @Index()
     @Column({ nullable: true })
     author: string;
 
@@ -29,6 +31,7 @@ export class SentimentHistory {
     @Column('jsonb', { default: {}, nullable: true })
     media_meta: Record<string, string>;
 
+    @Index()
     @CreateDateColumn()
     timestamp: Date;
 }
