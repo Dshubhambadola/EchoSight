@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { MessageSquare, Twitter, Video, Share2 } from 'lucide-react';
 import { useSearch } from '../../context/SearchContext';
+import { FadeIn } from '../bits/FadeIn';
 
 interface SocialMention {
     id: string;
@@ -99,9 +100,9 @@ export function RealTimeFeed() {
                             );
                         })
                         .map((mention) => (
-                            <div
+                            <FadeIn
                                 key={mention.id}
-                                className="bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 transition-colors animate-in fade-in slide-in-from-top-4 duration-300"
+                                className="bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 transition-colors"
                             >
                                 <div className="flex items-start justify-between">
                                     <div className="flex items-center space-x-3">
@@ -128,7 +129,7 @@ export function RealTimeFeed() {
                                 <p className="mt-3 text-slate-300 text-sm leading-relaxed">
                                     {mention.content}
                                 </p>
-                            </div>
+                            </FadeIn>
                         ))
                 )}
             </div>

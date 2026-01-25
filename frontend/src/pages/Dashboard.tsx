@@ -13,7 +13,11 @@ import { TopSoundsWidget } from '../components/Analytics/TopSoundsWidget';
 import { ShareOfVoiceWidget } from '../components/Analytics/ShareOfVoiceWidget';
 import { useSearch } from '../context/SearchContext';
 
+import { ShinyText } from '../components/bits/ShinyText';
+import { SpotlightCard } from '../components/bits/SpotlightCard';
+
 export const Dashboard: React.FC = () => {
+    // ... (hooks remain same)
     const auth = useAuth();
     const { query } = useSearch();
     const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -25,6 +29,7 @@ export const Dashboard: React.FC = () => {
     const [dateRange, setDateRange] = useState<DateRange>(RANGES[1]); // Default to 7d
     const [keywordType, setKeywordType] = useState<string>('ALL');
 
+    // ... (effects remain same)
     // Share of Voice Logic
     useEffect(() => {
         if (!auth.user?.access_token || !query) {
@@ -71,7 +76,9 @@ export const Dashboard: React.FC = () => {
     return (
         <div className="space-y-6 p-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold text-gray-800">Dashboard Overview</h1>
+                <h1 className="text-3xl font-extrabold tracking-tight">
+                    <ShinyText text="Dashboard Overview" disabled={false} speed={3} className="text-3xl font-extrabold" />
+                </h1>
                 <DateRangeSelect value={dateRange.key} onChange={setDateRange} />
             </div>
 
@@ -84,22 +91,30 @@ export const Dashboard: React.FC = () => {
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="rounded-lg border border-gray-800 bg-gray-900 p-6 shadow-sm">
-                    <h3 className="text-sm font-medium text-gray-400">Total Mentions</h3>
-                    <p className="mt-2 text-3xl font-bold text-white">{stats?.totalMentions.toLocaleString()}</p>
-                </div>
-                <div className="rounded-lg border border-gray-800 bg-gray-900 p-6 shadow-sm">
-                    <h3 className="text-sm font-medium text-gray-400">Active Platforms</h3>
-                    <p className="mt-2 text-3xl font-bold text-white">{stats?.activePlatforms}</p>
-                </div>
-                <div className="rounded-lg border border-gray-800 bg-gray-900 p-6 shadow-sm">
-                    <h3 className="text-sm font-medium text-gray-400">Avg Sentiment</h3>
-                    <p className="mt-2 text-3xl font-bold text-white">{stats?.averageSentiment}</p>
-                </div>
-                <div className="rounded-lg border border-gray-800 bg-gray-900 p-6 shadow-sm">
-                    <h3 className="text-sm font-medium text-gray-400">Mentions (24h)</h3>
-                    <p className="mt-2 text-3xl font-bold text-white">{stats?.mentionsLast24h.toLocaleString()}</p>
-                </div>
+                <SpotlightCard>
+                    <div className="p-6">
+                        <h3 className="text-sm font-medium text-slate-500">Total Mentions</h3>
+                        <p className="mt-2 text-3xl font-bold text-slate-900">{stats?.totalMentions.toLocaleString()}</p>
+                    </div>
+                </SpotlightCard>
+                <SpotlightCard>
+                    <div className="p-6">
+                        <h3 className="text-sm font-medium text-slate-500">Active Platforms</h3>
+                        <p className="mt-2 text-3xl font-bold text-slate-900">{stats?.activePlatforms}</p>
+                    </div>
+                </SpotlightCard>
+                <SpotlightCard>
+                    <div className="p-6">
+                        <h3 className="text-sm font-medium text-slate-500">Avg Sentiment</h3>
+                        <p className="mt-2 text-3xl font-bold text-slate-900">{stats?.averageSentiment}</p>
+                    </div>
+                </SpotlightCard>
+                <SpotlightCard>
+                    <div className="p-6">
+                        <h3 className="text-sm font-medium text-slate-500">Mentions (24h)</h3>
+                        <p className="mt-2 text-3xl font-bold text-slate-900">{stats?.mentionsLast24h.toLocaleString()}</p>
+                    </div>
+                </SpotlightCard>
             </div>
 
             {/* AI Summary */}
