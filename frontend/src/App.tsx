@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { DashboardLayout } from './layouts/DashboardLayout';
 import { RealTimeFeed } from './components/Feed/RealTimeFeed';
 import { Analytics } from './pages/Analytics';
+import { Reports } from './pages/Reports';
 import { Upgrade } from './pages/Upgrade';
 
 import { Dashboard } from './pages/Dashboard';
@@ -25,6 +26,7 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="feed" element={<RealTimeFeed />} />
           <Route path="analytics" element={<Analytics />} />
+          <Route path="reports" element={<Reports />} />
           <Route path="upgrade" element={<Upgrade />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
