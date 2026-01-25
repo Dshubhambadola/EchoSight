@@ -96,6 +96,24 @@ export const AnalyticsService = {
         }
     },
 
+    async getShareOfVoice(user: User | null | undefined, queries: string[], startDate?: Date | null, endDate?: Date | null) {
+        if (!user || queries.length === 0) return [];
+        try {
+            const query = AnalyticsService.getQueryString(startDate, endDate);
+            // Append queries. Axios params serialization can vary, let's manually append for safety given standard query string format
+            const queryParams = queries.map(q => `queries=${encodeURIComponent(q)}`).join('&');
+            const fullUrl = `${API_URL}/share-of-voice${query}&${queryParams}`;
+
+            const response = await axios.get(fullUrl, {
+                headers: { Authorization: `Bearer ${user.access_token}` },
+            });
+            return response.data;
+        } catch (error) {
+            console.error('Failed to fetch share of voice', error);
+            return [];
+        }
+    },
+
     async generateSummary(user: User | null | undefined, startDate?: Date | null, endDate?: Date | null) {
         if (!user) return "Unauthorized";
         try {

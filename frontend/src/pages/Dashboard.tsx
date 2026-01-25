@@ -10,16 +10,39 @@ import type { DateRange } from '../components/Analytics/DateRangeSelect';
 import { TopAuthorsWidget } from '../components/Analytics/TopAuthorsWidget';
 import { AiSummaryWidget } from '../components/Analytics/AiSummaryWidget';
 import { TopSoundsWidget } from '../components/Analytics/TopSoundsWidget';
+import { ShareOfVoiceWidget } from '../components/Analytics/ShareOfVoiceWidget';
+import { useSearch } from '../context/SearchContext';
 
 export const Dashboard: React.FC = () => {
     const auth = useAuth();
+    const { query } = useSearch();
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [keywords, setKeywords] = useState<{ text: string; value: number }[]>([]);
     const [authors, setAuthors] = useState<{ name: string; count: number; reach: number; impact: number }[]>([]);
     const [sounds, setSounds] = useState<{ name: string; count: number }[]>([]);
+    const [sovData, setSovData] = useState<{ name: string; value: number }[]>([]);
     const [loading, setLoading] = useState(true);
     const [dateRange, setDateRange] = useState<DateRange>(RANGES[1]); // Default to 7d
     const [keywordType, setKeywordType] = useState<string>('ALL');
+
+    // Share of Voice Logic
+    useEffect(() => {
+        if (!auth.user?.access_token || !query) {
+            setSovData([]);
+            return;
+        }
+
+        if (query.toLowerCase().includes(' vs ')) {
+            const terms = query.split(/\s+vs\s+/i).map(t => t.trim()).filter(t => t.length > 0);
+            if (terms.length > 1) {
+                AnalyticsService.getShareOfVoice(auth.user, terms, dateRange.startDate, dateRange.endDate)
+                    .then(data => setSovData(data))
+                    .catch(console.error);
+            }
+        } else {
+            setSovData([]);
+        }
+    }, [auth.user?.access_token, query, dateRange]);
 
     useEffect(() => {
         if (auth.user?.access_token) {
@@ -51,6 +74,13 @@ export const Dashboard: React.FC = () => {
                 <h1 className="text-2xl font-bold text-gray-800">Dashboard Overview</h1>
                 <DateRangeSelect value={dateRange.key} onChange={setDateRange} />
             </div>
+
+            {/* Share of Voice Widget (Conditional) */}
+            {sovData.length > 0 && (
+                <div className="mb-6">
+                    <ShareOfVoiceWidget data={sovData} />
+                </div>
+            )}
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
