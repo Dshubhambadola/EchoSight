@@ -13,15 +13,21 @@ export function AiSummaryWidget({ startDate, endDate }: AiSummaryWidgetProps) {
     const [summary, setSummary] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [upgradeRequired, setUpgradeRequired] = useState(false);
 
     const handleGenerate = async () => {
         setLoading(true);
         setError(null);
+        setUpgradeRequired(false);
         try {
             const result = await AnalyticsService.generateSummary(auth.user, startDate, endDate);
             setSummary(result);
-        } catch (err) {
-            setError("Failed to generate summary. Please try again.");
+        } catch (err: any) {
+            if (err.response?.status === 403) {
+                setUpgradeRequired(true);
+            } else {
+                setError("Failed to generate summary. Please try again.");
+            }
             console.error(err);
         } finally {
             setLoading(false);
@@ -53,8 +59,21 @@ export function AiSummaryWidget({ startDate, endDate }: AiSummaryWidgetProps) {
             )}
 
             {error && (
-                <div className="p-4 bg-red-900/20 border border-red-900 text-red-400 rounded-md">
+                <div className="p-4 bg-red-900/20 border border-red-900 text-red-400 rounded-md mb-4">
                     {error}
+                </div>
+            )}
+
+            {upgradeRequired && (
+                <div className="p-6 bg-indigo-900/20 border border-indigo-500/50 rounded-md text-center">
+                    <h3 className="text-lg font-medium text-white mb-2">Pro Feature</h3>
+                    <p className="text-slate-400 mb-4">You need an active EchoSight Pro subscription to use AI Summarization.</p>
+                    <a
+                        href="/upgrade"
+                        className="inline-block px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-md transition-colors"
+                    >
+                        Upgrade Now
+                    </a>
                 </div>
             )}
 

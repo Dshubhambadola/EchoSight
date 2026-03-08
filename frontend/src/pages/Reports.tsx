@@ -39,9 +39,14 @@ export const Reports: React.FC = () => {
             link.href = URL.createObjectURL(blob);
             link.download = `echosight_raw_data_${new Date().toISOString().split('T')[0]}.csv`;
             link.click();
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            alert('Failed to generate CSV');
+            if (error?.response?.status === 403) {
+                alert('Raw Data Export is a Pro feature. Please upgrade your subscription.');
+                window.location.href = '/upgrade';
+            } else {
+                alert('Failed to generate CSV');
+            }
         } finally {
             setLoading(false);
         }

@@ -124,7 +124,7 @@ export const AnalyticsService = {
             return response.data;
         } catch (error) {
             console.error('Failed to fetch raw data', error);
-            return [];
+            throw error;
         }
     },
 
