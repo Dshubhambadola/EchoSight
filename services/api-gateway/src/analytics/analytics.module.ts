@@ -7,11 +7,13 @@ import { AnalyticsController } from './analytics.controller';
 import { SentimentHistory } from './sentiment-history.entity';
 import { AnalyticsService } from './analytics.service';
 import { AiService } from './ai.service';
+import { BillingModule } from '../billing/billing.module';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([SentimentHistory]),
         ConfigModule,
+        BillingModule,
         CacheModule.register({
             store: redisStore,
             host: process.env.REDIS_HOST || 'echosight-redis',

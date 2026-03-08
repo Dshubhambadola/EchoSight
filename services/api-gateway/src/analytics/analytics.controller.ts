@@ -3,6 +3,7 @@ import { AuthGuard, Unprotected } from 'nest-keycloak-connect';
 import { Roles } from 'nest-keycloak-connect';
 import { AnalyticsService } from './analytics.service';
 import { AiService } from './ai.service';
+import { ProGuard } from '../auth/pro.guard';
 
 @Controller('analytics')
 export class AnalyticsController {
@@ -12,7 +13,7 @@ export class AnalyticsController {
     ) { }
 
     @Post('summary')
-    @Unprotected()
+    @UseGuards(ProGuard)
     async generateSummary(
         @Query('startDate') startDate?: string,
         @Query('endDate') endDate?: string
@@ -35,7 +36,6 @@ export class AnalyticsController {
     }
 
     @Get('trends')
-    @Unprotected()
     async getTrends(
         @Query('startDate') startDate?: string,
         @Query('endDate') endDate?: string
@@ -44,7 +44,6 @@ export class AnalyticsController {
     }
 
     @Get('dashboard')
-    @Unprotected()
     async getDashboardStats(
         @Query('startDate') startDate?: string,
         @Query('endDate') endDate?: string
@@ -53,7 +52,6 @@ export class AnalyticsController {
     }
 
     @Get('distribution')
-    @Unprotected()
     async getDistribution(
         @Query('startDate') startDate?: string,
         @Query('endDate') endDate?: string
@@ -62,7 +60,6 @@ export class AnalyticsController {
     }
 
     @Get('keywords')
-    @Unprotected()
     async getKeywords(
         @Query('startDate') startDate?: string,
         @Query('endDate') endDate?: string,
@@ -72,7 +69,6 @@ export class AnalyticsController {
     }
 
     @Get('authors')
-    @Unprotected()
     async getAuthors(
         @Query('startDate') startDate?: string,
         @Query('endDate') endDate?: string
@@ -81,7 +77,6 @@ export class AnalyticsController {
     }
 
     @Get('sounds')
-    @Unprotected()
     async getSounds(
         @Query('startDate') startDate?: string,
         @Query('endDate') endDate?: string
@@ -90,7 +85,6 @@ export class AnalyticsController {
     }
 
     @Get('share-of-voice')
-    @Unprotected()
     async getShareOfVoice(
         @Query('queries') queries: string | string[],
         @Query('startDate') startDate?: string,
@@ -101,7 +95,7 @@ export class AnalyticsController {
     }
 
     @Get('export')
-    @Unprotected()
+    @UseGuards(ProGuard)
     async getRawData(
         @Query('startDate') startDate?: string,
         @Query('endDate') endDate?: string
