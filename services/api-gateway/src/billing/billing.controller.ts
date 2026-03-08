@@ -21,4 +21,30 @@ export class BillingController {
             throw error;
         }
     }
+
+    @Post('webhook')
+    @Unprotected()
+    async webhook(@Request() req: any) {
+        const sig = req.headers['stripe-signature'];
+        // NestJS body parser issues with Stripe webhooks are common. 
+        // We assume req.rawBody is configured in main.ts if real webhooks are used.
+        // For our test, we'll try to use req.body directly if it's already parsed as buffer or json.
+
+        let payload: any;
+        if (req.rawBody) {
+            payload = req.rawBody;
+        } else if (Buffer.isBuffer(req.body)) {
+            payload = req.body;
+        } else {
+            payload = Buffer.from(JSON.stringify(req.body));
+        }
+
+        try {
+            return await this.billingService.handleWebhook(sig, payload);
+        } catch (err: any) {
+            console.error('Webhook processing failed:', err);
+            // Return 400 so Stripe knows we failed
+            throw err;
+        }
+    }
 }
