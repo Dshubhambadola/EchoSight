@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BillingService } from './billing.service';
 import { ConfigModule } from '@nestjs/config';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { Subscription } from './entities/subscription.entity';
 
 describe('BillingService', () => {
     let service: BillingService;
@@ -20,6 +22,14 @@ describe('BillingService', () => {
                 {
                     provide: 'STRIPE_CLIENT', // Assuming you might use injection token later, or mock implementation
                     useValue: mockStripe,
+                },
+                {
+                    provide: getRepositoryToken(Subscription),
+                    useValue: {
+                        findOne: jest.fn().mockResolvedValue(null),
+                        create: jest.fn().mockReturnValue({}),
+                        save: jest.fn().mockResolvedValue({}),
+                    },
                 }
             ],
             imports: [ConfigModule.forRoot()],
@@ -38,9 +48,11 @@ describe('BillingService', () => {
         const session = await service.createCheckoutSession('user123', 'test@test.com');
         expect(session).toEqual({ url: 'http://test-stripe-url.com' });
         expect(mockStripe.checkout.sessions.create).toHaveBeenCalledWith(expect.objectContaining({
-            success_url: expect.stringContaining('success'),
-            cancel_url: expect.stringContaining('cancel'),
-            mode: 'subscription',
+            success_url: expect.stringContaining('analytics?session_id={CHECKOUT_SESSION_ID}'),
+            cancel_url: expect.stringContaining('settings'),
+            mode: 'payment',
+            client_reference_id: 'user123',
+            customer_email: 'test@test.com'
         }));
     });
 });
