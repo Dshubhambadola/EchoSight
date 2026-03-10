@@ -93,26 +93,26 @@ export const Dashboard: React.FC = () => {
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 <SpotlightCard>
                     <div className="p-6">
-                        <h3 className="text-sm font-medium text-slate-500">Total Mentions</h3>
-                        <p className="mt-2 text-3xl font-bold text-slate-900">{stats?.totalMentions.toLocaleString()}</p>
+                        <h3 className="text-sm font-medium text-slate-600 dark:text-slate-500">Total Mentions</h3>
+                        <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{stats?.totalMentions.toLocaleString()}</p>
                     </div>
                 </SpotlightCard>
                 <SpotlightCard>
                     <div className="p-6">
-                        <h3 className="text-sm font-medium text-slate-500">Active Platforms</h3>
-                        <p className="mt-2 text-3xl font-bold text-slate-900">{stats?.activePlatforms}</p>
+                        <h3 className="text-sm font-medium text-slate-600 dark:text-slate-500">Active Platforms</h3>
+                        <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{stats?.activePlatforms}</p>
                     </div>
                 </SpotlightCard>
                 <SpotlightCard>
                     <div className="p-6">
-                        <h3 className="text-sm font-medium text-slate-500">Avg Sentiment</h3>
-                        <p className="mt-2 text-3xl font-bold text-slate-900">{stats?.averageSentiment}</p>
+                        <h3 className="text-sm font-medium text-slate-600 dark:text-slate-500">Avg Sentiment</h3>
+                        <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{stats?.averageSentiment}</p>
                     </div>
                 </SpotlightCard>
                 <SpotlightCard>
                     <div className="p-6">
-                        <h3 className="text-sm font-medium text-slate-500">Mentions (24h)</h3>
-                        <p className="mt-2 text-3xl font-bold text-slate-900">{stats?.mentionsLast24h.toLocaleString()}</p>
+                        <h3 className="text-sm font-medium text-slate-600 dark:text-slate-500">Mentions (24h)</h3>
+                        <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{stats?.mentionsLast24h.toLocaleString()}</p>
                     </div>
                 </SpotlightCard>
             </div>
