@@ -3,6 +3,8 @@ import { io, Socket } from 'socket.io-client';
 import { MessageSquare, Twitter, Video, Share2 } from 'lucide-react';
 import { useSearch } from '../../context/SearchContext';
 import { FadeIn } from '../bits/FadeIn';
+import { useAuth } from 'react-oidc-context';
+import { fetchRecentFeed } from '../../services/dashboard.service';
 
 interface SocialMention {
     id: string;
@@ -17,8 +19,26 @@ const SOCKET_URL = 'http://localhost:3000';
 
 export function RealTimeFeed() {
     const { query } = useSearch();
+    const auth = useAuth();
     const [mentions, setMentions] = useState<SocialMention[]>([]);
     const [socket, setSocket] = useState<Socket | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const loadInitialData = async () => {
+            if (auth.isAuthenticated && auth.user?.access_token) {
+                try {
+                    const data = await fetchRecentFeed(auth.user.access_token, 50);
+                    setMentions(data);
+                } catch (error) {
+                    console.error("Failed to fetch initial feed:", error);
+                } finally {
+                    setIsLoading(false);
+                }
+            }
+        };
+        loadInitialData();
+    }, [auth.isAuthenticated, auth.user?.access_token]);
 
     useEffect(() => {
         const newSocket = io(SOCKET_URL);
@@ -73,7 +93,7 @@ export function RealTimeFeed() {
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-semibold text-white">Live Feed</h1>
+                <h1 className="text-2xl font-semibold text-slate-900 dark:text-white transition-colors duration-200">Live Feed</h1>
                 <div className="flex items-center space-x-2">
                     <span className="relative flex h-3 w-3">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
@@ -84,8 +104,12 @@ export function RealTimeFeed() {
             </div>
 
             <div className="grid gap-4">
-                {mentions.length === 0 ? (
-                    <div className="text-center py-12 text-slate-500 border border-dashed border-slate-800 rounded-lg">
+                {isLoading ? (
+                    <div className="text-center py-12 text-slate-500 border border-dashed border-slate-300 dark:border-slate-800 rounded-lg transition-colors duration-200">
+                        Connecting to feed...
+                    </div>
+                ) : mentions.length === 0 ? (
+                    <div className="text-center py-12 text-slate-500 border border-dashed border-slate-300 dark:border-slate-800 rounded-lg transition-colors duration-200">
                         Waiting for live signals...
                     </div>
                 ) : (
@@ -102,18 +126,18 @@ export function RealTimeFeed() {
                         .map((mention) => (
                             <FadeIn
                                 key={mention.id}
-                                className="bg-slate-900 border border-slate-800 rounded-lg p-4 hover:border-slate-700 transition-colors"
+                                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
                             >
                                 <div className="flex items-start justify-between">
                                     <div className="flex items-center space-x-3">
-                                        <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700">
+                                        <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-700 transition-colors duration-200">
                                             {getPlatformIcon(mention.platform)}
                                         </div>
                                         <div>
-                                            <h3 className="text-sm font-medium text-white">
+                                            <h3 className="text-sm font-medium text-slate-900 dark:text-white transition-colors duration-200">
                                                 {mention.author}
                                             </h3>
-                                            <p className="text-xs text-slate-500">
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 transition-colors duration-200">
                                                 {new Date(mention.timestamp).toLocaleTimeString()} • via {mention.platform}
                                             </p>
                                         </div>
@@ -126,7 +150,7 @@ export function RealTimeFeed() {
                                         {mention.sentiment}
                                     </span>
                                 </div>
-                                <p className="mt-3 text-slate-300 text-sm leading-relaxed">
+                                <p className="mt-3 text-slate-700 dark:text-slate-300 text-sm leading-relaxed transition-colors duration-200">
                                     {mention.content}
                                 </p>
                             </FadeIn>

@@ -29,3 +29,12 @@ export const fetchDashboardStats = async (token: string, startDate?: Date | null
     });
     return response.data;
 };
+
+export const fetchRecentFeed = async (token: string, limit: number = 50): Promise<any[]> => {
+    const response = await axios.get(`${API_URL}/analytics/feed?limit=${limit}`, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+    return response.data;
+};
