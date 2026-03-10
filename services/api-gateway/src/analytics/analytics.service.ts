@@ -245,4 +245,23 @@ export class AnalyticsService {
       LIMIT 5000
     `);
   }
+
+  async getRecentMentions(limit: number = 50) {
+    return this.sentimentRepository.query(`
+      SELECT 
+        id, 
+        platform, 
+        content, 
+        author, 
+        timestamp, 
+        CASE 
+          WHEN sentiment_score > 0.1 THEN 'Positive'
+          WHEN sentiment_score < -0.1 THEN 'Negative'
+          ELSE 'Neutral'
+        END as sentiment
+      FROM sentiment_history 
+      ORDER BY timestamp DESC
+      LIMIT ${limit}
+    `);
+  }
 }

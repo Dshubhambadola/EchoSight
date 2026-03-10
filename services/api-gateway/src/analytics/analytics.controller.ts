@@ -102,4 +102,9 @@ export class AnalyticsController {
     ) {
         return this.analyticsService.getRawData(startDate, endDate);
     }
+
+    @Get('feed')
+    async getRecentMentions(@Query('limit') limit?: number) {
+        return this.analyticsService.getRecentMentions(limit || 50);
+    }
 }
